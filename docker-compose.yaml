@@ -1,0 +1,161 @@
+
+version: '2'
+services:
+
+  postgres:
+    image: "camelsmoker/postgres-alpine-custom:12.2"
+    restart: always
+    environment:
+    - POSTGRES_PASSWORD=password123
+    volumes:
+    - /var/lib/docker/custom-volumes/postgres-volume:/var/lib/postgresql/data
+    networks:
+        kube1:
+          ipv4_address: 10.1.1.4
+
+  pgadmin:
+    image: "dpage/pgadmin4:4.14"
+    restart: always
+    environment:
+    - PGADMIN_DEFAULT_EMAIL=pgadmin@user
+    - PGADMIN_DEFAULT_PASSWORD=pgadmin@pass
+    - PGADMIN_PORT=80
+    volumes:
+    - /var/lib/docker/custom-volumes/pgadmin-volume:/var/lib/pgadmin
+    ports:
+    - 8095:80
+    networks:
+        kube1:
+          ipv4_address: 10.1.1.5
+
+  rancher.gamedev.vok.today:
+    #image: "rancher/rancher:v2.4-head"
+    image: rancher/rancher:master-head
+    restart: unless-stopped
+    command: --no-cacerts
+    privileged: true
+    volumes:
+    - /var/lib/docker/custom-volumes/rancher-volume:/var/lib/rancher
+    - ./ssl/rancher.gamedev.vok.today.key:/etc/rancher/ssl/key.pem
+    - ./ssl/rancher.gamedev.vok.today.crt:/etc/rancher/ssl/cert.pem
+    ports:
+    - 80:80
+    - 443:443
+    networks:
+        kube1:
+          ipv4_address: 10.1.1.6
+
+  k3s_master:
+    #image: "rancher/k3s:v1.18.2-rc2-k3s1"
+    image: rancher/k3s:v1.20.2-k3s1
+    #image: rancher/k3s:v1.19.7-k3s1
+    restart: unless-stopped
+    #command: server --kubelet-arg=system-reserved=cpu=1500m,memory=7000Mi
+    command: server
+    privileged: true
+    environment:
+    - K3S_TOKEN=123451234512345
+    - K3S_KUBECONFIG_OUTPUT=/output/kubeconfig.yaml
+    - K3S_KUBECONFIG_MODE=666
+    - K3S_DATASTORE_ENDPOINT=postgres://postgres:password123@postgres/k3spostgres?sslmode=disable
+    volumes:
+    - /var/lib/docker/custom-volumes/persistent-volume-k3s:/persistent-volume
+    # This is just so that we get the kubeconfig file out
+    - .:/output
+#    ports:
+#    - 6443:6443
+    networks:
+      kube1:
+        ipv4_address: 10.1.1.7
+
+  k3s_worker:
+    #image: "rancher/k3s:v1.18.2-rc2-k3s1"
+    image: rancher/k3s:v1.20.2-k3s1
+    #image: rancher/k3s:v1.19.7-k3s1
+    restart: unless-stopped
+    #command: agent --kubelet-arg=system-reserved=cpu=1500m,memory=7000Mi
+    command: agent
+    privileged: true
+    environment:
+    - K3S_URL=https://k3s_master:6443
+    #- K3S_URL=https://10.1.1.7:6443
+    - K3S_TOKEN=123451234512345
+    volumes:
+    - /var/lib/docker/custom-volumes/persistent-volume-k3s-worker:/persistent-volume
+    ports:
+    - 32000-40000:32000-40000
+    - 32000-40000:32000-40000/udp
+#    ports:
+#    - 30080:80
+#    - 30443:443
+    networks:
+      kube1:
+        ipv4_address: 10.1.1.9
+
+  # registry:
+  #   image: "camelsmoker/registry-custom:v1"
+  #   restart: always
+  #   volumes:
+  #   - /var/lib/docker/custom-volumes/registry:/var/lib/registry
+  #   ports:
+  #   - 5000:5000
+  #   networks:
+  #     kube1:
+  #       ipv4_address: 10.1.1.9
+
+  # registry-ui:
+  #   image: "joxit/docker-registry-ui:static"
+  #   restart: always
+  #   ports:
+  #     - 8098:80
+  #   environment:
+  #     - REGISTRY_TITLE=private-docker-registry
+  #     - REGISTRY_URL=http://registry:5000
+  #     - DELETE_IMAGES=true
+  #   depends_on:
+  #     - registry
+  #   volumes:
+  #     - /var/lib/docker/custom-volumes/registry-ui:/var/lib/registry-ui
+  #   command:
+  #     - /bin/cat
+  #   networks:
+  #     kube1:
+  #       ipv4_address: 10.1.1.10
+
+  # jenkins:
+  #   image: "jenkins/jenkins:lts-alpine"
+  #   restart: always
+  #   user: root
+  #   volumes:
+  #   - /var/lib/docker/custom-volumes/jenkins:/var/jenkins_home
+  #   ports:
+  #     - 8097:8080
+  #   networks:
+  #     kube1:
+  #       ipv4_address: 10.1.1.11
+
+  # jenkins-jnlp-dind-slave:
+  #   image: "camelsmoker/jenkins-slave-dind-custom:v1"
+  #   restart: always
+  #   privileged: true
+  #   environment:
+  #   - JENKINS_URL=http://jenkins:8080
+  #   - JENKINS_TUNNEL=jenkins:50000
+  #   - JENKINS_SECRET=c941c45af89fb7bbc0f62e3cb4f4b8fcb72ff35ff694e7d110475730e5302a52
+  #   - JENKINS_AGENT_NAME=jenkins-slave
+  #   - JENKINS_WORKDIR=/home/jenkins
+  #   user: root
+  #   volumes:
+  #   - /var/lib/docker/custom-volumes/jenkins-slave-volume:/home/jenkins
+  #   networks:
+  #     kube1:
+  #       ipv4_address: 10.1.1.12
+
+networks:
+  kube1:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.1.1.0/24
+         gateway: 10.1.1.1
+

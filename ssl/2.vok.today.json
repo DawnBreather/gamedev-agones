@@ -1,0 +1,5 @@
+{
+	"domain": "2.vok.today",
+	"certUrl": "https://acme-v02.api.letsencrypt.org/acme/cert/04e1ad3cb0ebcaae54a425171d6ca23bc280",
+	"certStableUrl": "https://acme-v02.api.letsencrypt.org/acme/cert/04e1ad3cb0ebcaae54a425171d6ca23bc280"
+}

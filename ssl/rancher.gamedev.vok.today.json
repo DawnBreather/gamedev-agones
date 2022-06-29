@@ -1,0 +1,5 @@
+{
+	"domain": "rancher.gamedev.vok.today",
+	"certUrl": "https://acme-v02.api.letsencrypt.org/acme/cert/0418f3d542ea1ce25009dbaa41183ee3c207",
+	"certStableUrl": "https://acme-v02.api.letsencrypt.org/acme/cert/0418f3d542ea1ce25009dbaa41183ee3c207"
+}

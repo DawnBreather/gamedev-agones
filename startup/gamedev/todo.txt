@@ -1,0 +1,20 @@
+1) match making
+Create: 
+Join: 
+Search:
+* version
+* languages
+* region
+* game_mode
+Info: Players in room, game mode, languages, region
+
+
+ > spawn / kill game instances
+
+2) ping server discovery
+
+3) remote config
+* semantic versioning (>1.3.x); json
+  >> GET 1.4.2
+    * ( предоставить самуб свежую)
+* 
